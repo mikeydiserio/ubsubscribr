@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { attachStateCookie, createOAuthState } from '@/lib/oauth-state'
 
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.metadata',
@@ -18,6 +19,8 @@ export async function GET() {
     )
   }
 
+  const { state, nonce } = createOAuthState('google')
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -25,11 +28,14 @@ export async function GET() {
     scope: SCOPES,
     access_type: 'offline',
     prompt: 'consent',
-    state: 'google',
+    state,
     include_granted_scopes: 'false',
   })
 
-  return NextResponse.redirect(
-    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+  return attachStateCookie(
+    NextResponse.redirect(
+      `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+    ),
+    nonce
   )
 }

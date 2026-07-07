@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { attachStateCookie, createOAuthState } from '@/lib/oauth-state'
 
 const SCOPES = ['Mail.Read', 'User.Read', 'offline_access'].join(' ')
 
@@ -14,17 +15,22 @@ export async function GET() {
     )
   }
 
+  const { state, nonce } = createOAuthState('microsoft')
+
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
     redirect_uri: redirectUri,
     scope: SCOPES,
     response_mode: 'query',
-    state: 'microsoft',
+    state,
     prompt: 'select_account',
   })
 
-  return NextResponse.redirect(
-    `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${params.toString()}`
+  return attachStateCookie(
+    NextResponse.redirect(
+      `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${params.toString()}`
+    ),
+    nonce
   )
 }

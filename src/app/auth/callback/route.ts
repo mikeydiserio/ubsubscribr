@@ -3,244 +3,135 @@ import { OAuth2Client } from 'google-auth-library'
 import { ConfidentialClientApplication } from '@azure/msal-node'
 import jwt from 'jsonwebtoken'
 import { createRouteHandlerClient } from '@/lib/supabase/route-handler'
-async function handleGoogleCallback(
-  request: NextRequest,
-  supabase: any,
-  code: string
-) {
-  const clientId = process.env.GOOGLE_CLIENT_ID!
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI!
+import { encryptToken } from '@/lib/crypto'
+import { OAUTH_STATE_COOKIE, verifyOAuthState, type OAuthProvider } from '@/lib/oauth-state'
 
-  const oauth = new OAuth2Client(clientId, clientSecret, redirectUri)
+interface ProviderTokens {
+  provider: OAuthProvider
+  supabaseProvider: 'google' | 'azure' | 'apple'
+  idToken: string
+  accessToken: string
+  refreshToken: string
+  scopes: string
+  expiresAt: Date
+}
 
-  let tokenResponse
-  try {
-    tokenResponse = await oauth.getToken(code)
-  } catch {
-    return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url))
+async function exchangeGoogle(code: string): Promise<ProviderTokens> {
+  const oauth = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID!,
+    process.env.GOOGLE_CLIENT_SECRET!,
+    process.env.GOOGLE_REDIRECT_URI!
+  )
+
+  const { tokens } = await oauth.getToken(code)
+  if (!tokens.access_token || !tokens.id_token) {
+    throw new Error('Missing tokens in Google response')
   }
 
-  const tokens = tokenResponse.tokens
-  if (!tokens.access_token) {
-    return NextResponse.redirect(new URL('/?error=missing_tokens', request.url))
-  }
-
-  oauth.setCredentials(tokens)
-  const tokenInfo = await oauth.getTokenInfo(tokens.access_token)
-  const email = tokenInfo.email || 'unknown'
-
-  const { error: signInError } = await supabase.auth.signInWithIdToken({
+  return {
     provider: 'google',
-    token: tokens.id_token!,
-  })
-
-  if (signInError) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+    supabaseProvider: 'google',
+    idToken: tokens.id_token,
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token || '',
+    scopes: 'gmail.metadata',
+    // expiry_date is already an absolute epoch-ms timestamp
+    expiresAt: tokens.expiry_date
+      ? new Date(tokens.expiry_date)
+      : new Date(Date.now() + 3600_000),
   }
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
-  }
-
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', user.id)
-    .single()
-
-  if (!existingUser) {
-    await supabase.from('users').insert({
-      id: user.id,
-      email,
-      provider: 'google',
-    })
-  }
-
-  await supabase.from('oauth_tokens').upsert(
-    {
-      user_id: user.id,
-      provider: 'google',
-      encrypted_access_token: tokens.access_token,
-      encrypted_refresh_token: tokens.refresh_token || '',
-      scopes: 'gmail.metadata',
-      expires_at: new Date(Date.now() + (tokens.expiry_date || 3600 * 1000)).toISOString(),
-    },
-    { onConflict: 'user_id' }
-  )
-
-  return NextResponse.redirect(new URL('/scan', request.url))
 }
 
-async function handleMicrosoftCallback(
-  request: NextRequest,
-  supabase: ReturnType<typeof Object>,
-  code: string
-) {
-  const clientId = process.env.MICROSOFT_CLIENT_ID!
-  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!
-  const tenantId = process.env.MICROSOFT_TENANT_ID || 'common'
-
-  const msalConfig = new ConfidentialClientApplication({
+async function exchangeMicrosoft(code: string): Promise<ProviderTokens> {
+  const msal = new ConfidentialClientApplication({
     auth: {
-      clientId,
-      clientSecret,
-      authority: `https://login.microsoftonline.com/${tenantId}`,
+      clientId: process.env.MICROSOFT_CLIENT_ID!,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+      authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}`,
     },
   })
 
-  let tokenResponse
-  try {
-    tokenResponse = await msalConfig.acquireTokenByCode({
-      code,
-      redirectUri: process.env.MICROSOFT_REDIRECT_URI!,
-      scopes: ['Mail.Read', 'User.Read', 'offline_access'],
-    })
-  } catch {
-    return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url))
-  }
-
-  if (!tokenResponse || !tokenResponse.accessToken || !tokenResponse.idToken) {
-    return NextResponse.redirect(new URL('/?error=missing_tokens', request.url))
-  }
-
-  const email = tokenResponse.account?.username || 'unknown'
-
-  const { error: signInError } = await supabase.auth.signInWithIdToken({
-    provider: 'azure',
-    token: tokenResponse.idToken,
+  const result = await msal.acquireTokenByCode({
+    code,
+    redirectUri: process.env.MICROSOFT_REDIRECT_URI!,
+    scopes: ['Mail.Read', 'User.Read', 'offline_access'],
   })
 
-  if (signInError) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+  if (!result?.accessToken || !result.idToken) {
+    throw new Error('Missing tokens in Microsoft response')
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+  // msal-node does not expose the refresh token on the result; it lives in
+  // the serialized token cache.
+  const cache = JSON.parse(msal.getTokenCache().serialize()) as {
+    RefreshToken?: Record<string, { secret?: string }>
   }
+  const refreshEntry = Object.values(cache.RefreshToken ?? {})[0]
 
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', user.id)
-    .single()
-
-  if (!existingUser) {
-    await supabase.from('users').insert({
-      id: user.id,
-      email,
-      provider: 'microsoft',
-    })
+  return {
+    provider: 'microsoft',
+    supabaseProvider: 'azure',
+    idToken: result.idToken,
+    accessToken: result.accessToken,
+    refreshToken: refreshEntry?.secret || '',
+    scopes: 'Mail.Read',
+    expiresAt: result.expiresOn ?? new Date(Date.now() + 3600_000),
   }
-
-  const msTokens = tokenResponse as any
-  await supabase.from('oauth_tokens').upsert(
-    {
-      user_id: user.id,
-      provider: 'microsoft',
-      encrypted_access_token: msTokens.accessToken,
-      encrypted_refresh_token: msTokens.refreshToken || '',
-      scopes: 'Mail.Read',
-      expires_at: msTokens.expiresOn
-        ? new Date(msTokens.expiresOn).toISOString()
-        : new Date(Date.now() + 3600 * 1000).toISOString(),
-    },
-    { onConflict: 'user_id' }
-  )
-
-  return NextResponse.redirect(new URL('/scan', request.url))
 }
 
-async function handleAppleCallback(
-  request: NextRequest,
-  supabase: any,
-  code: string
-) {
+async function exchangeApple(code: string): Promise<ProviderTokens> {
   const clientId = process.env.APPLE_CLIENT_ID!
-  const teamId = process.env.APPLE_TEAM_ID!
-  const keyId = process.env.APPLE_KEY_ID!
-  const privateKey = process.env.APPLE_PRIVATE_KEY!
-  const redirectUri = process.env.APPLE_REDIRECT_URI!
 
   const clientSecret = jwt.sign(
     {
-      iss: teamId,
+      iss: process.env.APPLE_TEAM_ID!,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 86400 * 180,
       aud: 'https://appleid.apple.com',
       sub: clientId,
     },
-    privateKey.replace(/\\n/g, '\n'),
-    { algorithm: 'ES256', keyid: keyId }
+    process.env.APPLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+    { algorithm: 'ES256', keyid: process.env.APPLE_KEY_ID! }
   )
 
-  let tokenResponse
-  try {
-    const res = await fetch('https://appleid.apple.com/auth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
-      }),
-    })
-    tokenResponse = await res.json()
-  } catch {
-    return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url))
-  }
-
-  if (!tokenResponse.access_token || !tokenResponse.id_token) {
-    return NextResponse.redirect(new URL('/?error=missing_tokens', request.url))
-  }
-
-  const email = tokenResponse.email || 'unknown'
-
-  const { error: signInError } = await supabase.auth.signInWithIdToken({
-    provider: 'apple',
-    token: tokenResponse.id_token,
+  const res = await fetch('https://appleid.apple.com/auth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: process.env.APPLE_REDIRECT_URI!,
+    }),
   })
 
-  if (signInError) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+  const data = (await res.json()) as {
+    access_token?: string
+    refresh_token?: string
+    id_token?: string
+    expires_in?: number
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+  if (!res.ok || !data.access_token || !data.id_token) {
+    throw new Error('Missing tokens in Apple response')
   }
 
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', user.id)
-    .single()
-
-  if (!existingUser) {
-    await supabase.from('users').insert({
-      id: user.id,
-      email,
-      provider: 'apple',
-    })
+  return {
+    provider: 'apple',
+    supabaseProvider: 'apple',
+    idToken: data.id_token,
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token || '',
+    scopes: 'email',
+    expiresAt: new Date(Date.now() + (data.expires_in ?? 3600) * 1000),
   }
+}
 
-  await supabase.from('oauth_tokens').upsert(
-    {
-      user_id: user.id,
-      provider: 'apple',
-      encrypted_access_token: tokenResponse.access_token,
-      encrypted_refresh_token: tokenResponse.refresh_token || '',
-      scopes: 'email',
-      expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-    },
-    { onConflict: 'user_id' }
-  )
-
-  return NextResponse.redirect(new URL('/scan', request.url))
+const exchangers: Record<OAuthProvider, (code: string) => Promise<ProviderTokens>> = {
+  google: exchangeGoogle,
+  microsoft: exchangeMicrosoft,
+  apple: exchangeApple,
 }
 
 export async function GET(request: NextRequest) {
@@ -248,25 +139,66 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const errorParam = searchParams.get('error')
   const state = searchParams.get('state')
+  const cookieNonce = request.cookies.get(OAUTH_STATE_COOKIE)?.value
 
-  if (errorParam) {
-    return NextResponse.redirect(new URL('/?error=oauth_denied', request.url))
+  const fail = (reason: string) => {
+    const response = NextResponse.redirect(new URL(`/?error=${reason}`, request.url))
+    response.cookies.delete(OAUTH_STATE_COOKIE)
+    return response
   }
 
-  if (!code) {
-    return NextResponse.redirect(new URL('/?error=no_code', request.url))
+  if (errorParam) return fail('oauth_denied')
+  if (!code) return fail('no_code')
+
+  const provider = verifyOAuthState(state, cookieNonce)
+  if (!provider) return fail('invalid_state')
+
+  let tokens: ProviderTokens
+  try {
+    tokens = await exchangers[provider](code)
+  } catch (error) {
+    console.error(`${provider} token exchange failed:`, error)
+    return fail('token_exchange_failed')
   }
 
-  const provider = state || 'google'
+  const { supabase, supabaseResponse } = createRouteHandlerClient(request)
 
-  const { supabase } = await createRouteHandlerClient(request)
-
-  switch (provider) {
-    case 'microsoft':
-      return handleMicrosoftCallback(request, supabase, code)
-    case 'apple':
-      return handleAppleCallback(request, supabase, code)
-    default:
-      return handleGoogleCallback(request, supabase, code)
+  const { error: signInError } = await supabase.auth.signInWithIdToken({
+    provider: tokens.supabaseProvider,
+    token: tokens.idToken,
+  })
+  if (signInError) {
+    console.error('Supabase sign-in failed:', signInError)
+    return fail('auth_failed')
   }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return fail('auth_failed')
+
+  const { error: tokenError } = await supabase.from('oauth_tokens').upsert(
+    {
+      user_id: user.id,
+      provider: tokens.provider,
+      encrypted_access_token: encryptToken(tokens.accessToken),
+      encrypted_refresh_token: tokens.refreshToken
+        ? encryptToken(tokens.refreshToken)
+        : '',
+      scopes: tokens.scopes,
+      expires_at: tokens.expiresAt.toISOString(),
+    },
+    { onConflict: 'user_id,provider' }
+  )
+  if (tokenError) {
+    console.error('Failed to store OAuth tokens:', tokenError)
+    return fail('token_storage_failed')
+  }
+
+  // Carry the session cookies written during signInWithIdToken onto the
+  // redirect, or the user lands on /scan logged out.
+  const response = NextResponse.redirect(new URL('/scan', request.url))
+  for (const cookie of supabaseResponse.cookies.getAll()) {
+    response.cookies.set(cookie)
+  }
+  response.cookies.delete(OAUTH_STATE_COOKIE)
+  return response
 }

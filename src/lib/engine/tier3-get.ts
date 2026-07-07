@@ -1,4 +1,5 @@
 import type { UnsubscribeResult } from '@/types'
+import { fetchPublic } from './url-guard'
 
 const SUCCESS_KEYWORDS = [
   'unsubscribed',
@@ -20,12 +21,11 @@ function detectSuccess(html: string): boolean {
 
 export async function tier3GetUnsubscribe(url: string): Promise<UnsubscribeResult> {
   try {
-    const response = await fetch(url, {
+    const response = await fetchPublic(url, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Unsubscribr/1.0)',
       },
-      redirect: 'follow',
     })
 
     if (!response.ok) {
@@ -64,10 +64,13 @@ export async function tier3GetUnsubscribe(url: string): Promise<UnsubscribeResul
       }
     }
 
+    // A 200 with no recognizable confirmation is not proof of anything —
+    // claiming success here produces false "Unsubscribed" results.
     return {
       subscriptionId: '',
       tierUsed: 3,
-      status: 'success',
+      status: 'needs_review',
+      error: 'Could not confirm the unsubscribe succeeded',
     }
   } catch (error) {
     return {

@@ -1,8 +1,11 @@
 import type { UnsubscribeResult } from '@/types'
+import { fetchPublic } from './url-guard'
 
 export async function tier1PostUnsubscribe(url: string): Promise<UnsubscribeResult> {
   try {
-    const response = await fetch(url, {
+    // RFC 8058 requires https for one-click unsubscribe URLs.
+    const response = await fetchPublic(url, {
+      httpsOnly: true,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
