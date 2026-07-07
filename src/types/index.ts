@@ -35,6 +35,8 @@ export interface UnsubscribeResult {
   tierUsed: 1 | 2 | 3 | 4 | 5
   status: UnsubscribeStatus
   error?: string
+  /** Present for mailto-only senders: a prefilled link the user sends themselves. */
+  mailtoLink?: string
 }
 
 export interface ScanResult {

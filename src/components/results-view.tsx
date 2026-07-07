@@ -83,7 +83,15 @@ export default function ResultsView({ results }: Props) {
                           {tierLabels[result.tierUsed] || `Tier ${result.tierUsed}`}
                         </p>
                       </div>
-                      <span className="text-xs font-medium shrink-0 ml-2">
+                      <span className="flex items-center gap-3 text-xs font-medium shrink-0 ml-2">
+                        {result.mailtoLink && (
+                          <a
+                            href={result.mailtoLink}
+                            className="underline underline-offset-2"
+                          >
+                            Send unsubscribe email
+                          </a>
+                        )}
                         {config.label}
                       </span>
                     </div>

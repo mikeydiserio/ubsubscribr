@@ -48,22 +48,12 @@ export default function ConnectButton() {
   const [loading, setLoading] = useState<Provider>(null)
   const router = useRouter()
 
-  const connect = useCallback(async (provider: Exclude<Provider, null>) => {
+  const connect = useCallback((provider: Exclude<Provider, null>) => {
     if (providerConfig[provider].disabled) return
     setLoading(provider)
-    try {
-      const response = await fetch(`/api/auth/${provider}`)
-      if (response.redirected) {
-        window.location.href = response.url
-      } else {
-        const data = await response.json()
-        console.error(`${provider} OAuth error:`, data.error)
-        setLoading(null)
-      }
-    } catch (err) {
-      console.error(`Failed to initiate ${provider} OAuth:`, err)
-      setLoading(null)
-    }
+    // Full-page navigation: the route 307s to the provider's consent screen,
+    // which fetch() cannot follow cross-origin.
+    window.location.href = `/api/auth/${provider}`
   }, [])
 
   return (
@@ -119,7 +109,7 @@ export default function ConnectButton() {
       </button>
 
       <p className="text-xs text-gray-400 text-center">
-        OAuth only — we never see your password. Emails are scanned locally via API.
+        OAuth only — we never see your password. We read message headers, never message contents.
       </p>
     </div>
   )

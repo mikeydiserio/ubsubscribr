@@ -1,5 +1,6 @@
-import { google } from 'googleapis'
-import { OAuth2Client } from 'google-auth-library'
+// googleapis bundles its own google-auth-library; deriving the client type
+// from google.auth.OAuth2 itself avoids clashing with the app-level copy.
+import { google, type gmail_v1 } from 'googleapis'
 import type { MailboxProvider } from './mailbox-provider'
 import type { MailboxMessage } from '@/types'
 
@@ -9,10 +10,18 @@ interface GoogleToken {
   expiryDate: number
 }
 
+export interface RefreshedTokens {
+  accessToken: string
+  refreshToken?: string
+  expiryDate: number
+}
+
 interface HeaderDict {
   name?: string | null
   value?: string | null
 }
+
+const MESSAGE_FETCH_CONCURRENCY = 20
 
 function parseHeaders(headers: HeaderDict[]): Record<string, string> {
   const map: Record<string, string> = {}
@@ -34,7 +43,7 @@ function extractName(from: string): string {
   return match ? match[1].trim().replace(/^"+|"+$/g, '') : from
 }
 
-function extractBody(payload: any): string | undefined {
+function extractBody(payload: gmail_v1.Schema$MessagePart | undefined): string | undefined {
   if (!payload) return undefined
 
   if (payload.mimeType === 'text/html' && payload.body?.data) {
@@ -55,11 +64,14 @@ function extractBody(payload: any): string | undefined {
 }
 
 export class GoogleMailboxAdapter implements MailboxProvider {
-  private auth: OAuth2Client
+  private auth: InstanceType<typeof google.auth.OAuth2>
   private gmail: ReturnType<typeof google.gmail>
 
-  constructor(tokens: GoogleToken) {
-    this.auth = new OAuth2Client(
+  constructor(
+    tokens: GoogleToken,
+    onTokensRefreshed?: (tokens: RefreshedTokens) => Promise<void>
+  ) {
+    this.auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID!,
       process.env.GOOGLE_CLIENT_SECRET!
     )
@@ -75,15 +87,22 @@ export class GoogleMailboxAdapter implements MailboxProvider {
           refresh_token: newTokens.refresh_token,
         })
       }
+      if (newTokens.access_token && onTokensRefreshed) {
+        onTokensRefreshed({
+          accessToken: newTokens.access_token,
+          refreshToken: newTokens.refresh_token || undefined,
+          expiryDate: newTokens.expiry_date || Date.now() + 3600_000,
+        }).catch((error) => {
+          console.error('Failed to persist refreshed Google tokens:', error)
+        })
+      }
     })
-    this.gmail = google.gmail({ version: 'v1', auth: this.auth as any })
+    this.gmail = google.gmail({ version: 'v1', auth: this.auth })
   }
 
   async connect(): Promise<void> {
-    const tokenInfo = await this.auth.getTokenInfo(
-      this.auth.credentials.access_token as string
-    )
-    if (!tokenInfo) throw new Error('Invalid token')
+    // No pre-validation: the access token may be expired, and the client
+    // refreshes it lazily on the first API call using the refresh token.
   }
 
   async *listMessages(
@@ -109,25 +128,32 @@ export class GoogleMailboxAdapter implements MailboxProvider {
 
       const batch: MailboxMessage[] = []
 
-      for (const ref of messageRefs) {
-        try {
-          const full = await this.gmail.users.messages.get({
-            userId: 'me',
-            id: ref.id!,
-            format: 'metadata',
-            metadataHeaders: [
-              'From',
-              'Subject',
-              'Date',
-              'List-ID',
-              'List-Unsubscribe',
-              'List-Unsubscribe-Post',
-            ],
-          })
+      for (let i = 0; i < messageRefs.length; i += MESSAGE_FETCH_CONCURRENCY) {
+        const chunk = messageRefs.slice(i, i + MESSAGE_FETCH_CONCURRENCY)
+        const results = await Promise.allSettled(
+          chunk.map((ref) =>
+            this.gmail.users.messages.get({
+              userId: 'me',
+              id: ref.id!,
+              format: 'metadata',
+              metadataHeaders: [
+                'From',
+                'Subject',
+                'Date',
+                'List-ID',
+                'List-Unsubscribe',
+                'List-Unsubscribe-Post',
+              ],
+            })
+          )
+        )
 
+        for (const result of results) {
+          if (result.status !== 'fulfilled') continue
+          const full = result.value
           const rawHeaders: HeaderDict[] = full.data.payload?.headers || []
           const headers = parseHeaders(rawHeaders)
-          const message: MailboxMessage = {
+          batch.push({
             id: full.data.id!,
             fromAddress: extractEmail(headers['from'] || ''),
             fromName: extractName(headers['from'] || ''),
@@ -137,10 +163,7 @@ export class GoogleMailboxAdapter implements MailboxProvider {
             listUnsubscribe: headers['list-unsubscribe'],
             listUnsubscribePost:
               headers['list-unsubscribe-post']?.toLowerCase().includes('one-click') ?? false,
-          }
-          batch.push(message)
-        } catch {
-          continue
+          })
         }
       }
 
@@ -174,6 +197,12 @@ export class GoogleMailboxAdapter implements MailboxProvider {
   }
 
   async disconnect(): Promise<void> {
+    // Nothing to close: the Gmail API is stateless REST. Revoking the OAuth
+    // grant is a separate, explicit action (revokeAccess) — the scanner calls
+    // disconnect() after every scan and must not kill the connection.
+  }
+
+  async revokeAccess(): Promise<void> {
     try {
       await this.auth.revokeCredentials()
     } catch {

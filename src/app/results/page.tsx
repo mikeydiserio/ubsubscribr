@@ -33,6 +33,9 @@ export default function ResultsPage() {
       senderName: nameMap.get(r.subscriptionId) || 'Unknown',
     }))
 
+    // sessionStorage is client-only external state; reading it in an effect
+    // (not a lazy initializer) avoids an SSR hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResults(named)
     setLoaded(true)
   }, [router])

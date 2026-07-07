@@ -3,20 +3,33 @@ import { createRouteHandlerClient } from '@/lib/supabase/route-handler'
 import { runUnsubscribe } from '@/lib/engine/unsubscribe-engine'
 import type { UnsubscribeMethod } from '@/types'
 
+const MAX_BATCH_SIZE = 200
+
 export async function POST(request: NextRequest) {
-  const { supabase, supabaseResponse } = await createRouteHandlerClient(request)
+  const { supabase, supabaseResponse } = createRouteHandlerClient(request)
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const body = await request.json()
-  const { subscriptionIds } = body as { subscriptionIds: string[] }
+  const body = await request.json().catch(() => null)
+  const subscriptionIds = body?.subscriptionIds
 
-  if (!subscriptionIds?.length) {
+  if (
+    !Array.isArray(subscriptionIds) ||
+    subscriptionIds.length === 0 ||
+    !subscriptionIds.every((id) => typeof id === 'string')
+  ) {
     return NextResponse.json(
       { error: 'No subscription IDs provided' },
+      { status: 400 }
+    )
+  }
+
+  if (subscriptionIds.length > MAX_BATCH_SIZE) {
+    return NextResponse.json(
+      { error: `Too many subscriptions in one request (max ${MAX_BATCH_SIZE})` },
       { status: 400 }
     )
   }
@@ -39,13 +52,15 @@ export async function POST(request: NextRequest) {
   for (const sub of subscriptions) {
     let method: UnsubscribeMethod | null = null
 
-    if (sub.detected_tier && sub.detected_method) {
-      const tierMatch = sub.detected_method.match(/^(\d):(.+)/)
-      if (tierMatch) {
-        method = {
-          tier: parseInt(tierMatch[1]) as 1 | 2 | 3,
-          description: tierMatch[2],
-        }
+    if (
+      (sub.detected_tier === 1 || sub.detected_tier === 2 || sub.detected_tier === 3) &&
+      (sub.unsubscribe_url || sub.unsubscribe_mailto)
+    ) {
+      method = {
+        tier: sub.detected_tier,
+        description: sub.detected_method || '',
+        url: sub.unsubscribe_url || undefined,
+        mailto: sub.unsubscribe_mailto || undefined,
       }
     }
 
@@ -59,7 +74,7 @@ export async function POST(request: NextRequest) {
       continue
     }
 
-    const result = await runUnsubscribe(method, sub.from_address)
+    const result = await runUnsubscribe(method)
 
     await supabase.from('unsubscribe_jobs').insert({
       subscription_id: sub.id,
@@ -78,7 +93,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const { supabase, supabaseResponse } = await createRouteHandlerClient(request)
+  const { supabase, supabaseResponse } = createRouteHandlerClient(request)
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {

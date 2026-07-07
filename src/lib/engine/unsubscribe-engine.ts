@@ -46,14 +46,13 @@ export function detectMethod(message: {
 }
 
 export async function runUnsubscribe(
-  method: UnsubscribeMethod,
-  fromAddress: string
+  method: UnsubscribeMethod
 ): Promise<UnsubscribeResult> {
   switch (method.tier) {
     case 1:
       return tier1PostUnsubscribe(method.url!)
     case 2:
-      return tier2MailtoUnsubscribe(method.mailto!, fromAddress)
+      return tier2MailtoUnsubscribe(method.mailto!)
     case 3:
       return tier3GetUnsubscribe(method.url!)
     default:

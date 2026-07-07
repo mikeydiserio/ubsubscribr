@@ -33,7 +33,7 @@ export default function SignupPage() {
         return
       }
 
-      if (data.session) {
+      if (data.confirmed) {
         router.push('/scan')
       } else {
         setMessage('Check your email to confirm your account.')
@@ -63,6 +63,7 @@ export default function SignupPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -78,6 +79,7 @@ export default function SignupPage() {
             <input
               id="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

@@ -10,7 +10,14 @@ export default function ScanProgress({ progress, state }: ScanProgressProps) {
 
   return (
     <div className="w-full space-y-2">
-      <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+      <div
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Inbox scan progress"
+        className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden"
+      >
         <div
           className={`h-full rounded-full transition-all duration-500 ease-out ${
             isDone

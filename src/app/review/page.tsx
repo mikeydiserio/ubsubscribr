@@ -3,19 +3,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SubscriptionList from '@/components/subscription-list'
-import type { SubscriptionGroup, UnsubscribeResult } from '@/types'
+import type { SubscriptionGroup } from '@/types'
 
 export default function ReviewPage() {
   const router = useRouter()
   const [subscriptions, setSubscriptions] = useState<SubscriptionGroup[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [running, setRunning] = useState(false)
-  const [results, setResults] = useState<UnsubscribeResult[]>([])
 
   useEffect(() => {
     const stored = sessionStorage.getItem('subscriptions')
     if (stored) {
       const parsed: SubscriptionGroup[] = JSON.parse(stored)
+      // sessionStorage is client-only external state; reading it in an effect
+      // (not a lazy initializer) avoids an SSR hydration mismatch.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSubscriptions(parsed)
       setSelected(new Set(parsed.map((s) => s.id)))
     } else {
@@ -59,7 +61,6 @@ export default function ReviewPage() {
       }
 
       const data = await response.json()
-      setResults(data.results)
 
       sessionStorage.setItem('results', JSON.stringify(data.results))
       sessionStorage.setItem(

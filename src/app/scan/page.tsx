@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ScanProgress from '@/components/scan-progress'
 import type { SubscriptionGroup } from '@/types'
@@ -49,7 +49,11 @@ export default function ScanPage() {
     }
   }, [])
 
+  const scanStarted = useRef(false)
   useEffect(() => {
+    // Guard against StrictMode double-invoke kicking off two inbox scans
+    if (scanStarted.current) return
+    scanStarted.current = true
     startScan()
   }, [startScan])
 

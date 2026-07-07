@@ -20,9 +20,11 @@ function parseMailto(mailto: string): MailtoParseResult | null {
   return { address, subject }
 }
 
+// The app has no mail-send scope (gmail.metadata is read-only), so mailto
+// unsubscribes can't be automated. Hand the user a ready-to-send mailto link
+// instead.
 export async function tier2MailtoUnsubscribe(
-  mailtoUrl: string,
-  senderAddress: string
+  mailtoUrl: string
 ): Promise<UnsubscribeResult> {
   const parsed = parseMailto(mailtoUrl)
   if (!parsed) {
@@ -34,28 +36,14 @@ export async function tier2MailtoUnsubscribe(
     }
   }
 
-  try {
-    const mailtoSubject = parsed.subject || 'unsubscribe'
-    const encodedTo = encodeURIComponent(parsed.address)
-    const encodedSubject = encodeURIComponent(mailtoSubject)
-    const encodedBody = encodeURIComponent(
-      `Please unsubscribe me from this mailing list.\n\nSent from: ${senderAddress}`
-    )
+  const subject = encodeURIComponent(parsed.subject || 'unsubscribe')
+  const body = encodeURIComponent('Please unsubscribe me from this mailing list.')
 
-    const mailtoLink = `mailto:${encodedTo}?subject=${encodedSubject}&body=${encodedBody}`
-
-    return {
-      subscriptionId: '',
-      tierUsed: 2,
-      status: 'needs_review',
-      error: 'Mailto link generated — user needs to send from their mail client',
-    }
-  } catch (error) {
-    return {
-      subscriptionId: '',
-      tierUsed: 2,
-      status: 'failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
+  return {
+    subscriptionId: '',
+    tierUsed: 2,
+    status: 'needs_review',
+    error: 'This sender only supports unsubscribe by email — send it from your mail client',
+    mailtoLink: `mailto:${encodeURIComponent(parsed.address)}?subject=${subject}&body=${body}`,
   }
 }
