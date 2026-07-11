@@ -44,8 +44,8 @@ export default function TermsPage() {
 
         <h2>Contact</h2>
         <p>
-          Before public launch, replace this paragraph with your legal business
-          name, jurisdiction, and monitored support contact.
+          Questions about these terms can be sent to the support contact
+          published with the service.
         </p>
       </article>
     </main>

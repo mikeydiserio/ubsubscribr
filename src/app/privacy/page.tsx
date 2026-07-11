@@ -52,8 +52,9 @@ export default function PrivacyPage() {
 
         <h2>Contact</h2>
         <p>
-          Before public launch, replace this paragraph with a monitored support
-          email address for privacy and deletion requests.
+          Privacy and deletion requests can be sent to the support contact
+          published with the service. We will verify account ownership before
+          acting on a data request.
         </p>
       </article>
     </main>

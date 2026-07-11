@@ -28,7 +28,7 @@ export default function SubscriptionList({
         return (
           <label
             key={sub.id}
-            className={`flex items-center gap-3 rounded-lg p-3 cursor-pointer transition-colors ${
+            className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors ${
               isSelected
                 ? 'bg-neutral-100 dark:bg-neutral-900'
                 : 'hover:bg-neutral-50 dark:hover:bg-neutral-900/50'
@@ -46,8 +46,8 @@ export default function SubscriptionList({
               <p className="text-xs text-gray-500 truncate">{sub.fromAddress}</p>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-              <span>{sub.messageCount} msg</span>
+            <div className="flex shrink-0 flex-col items-end gap-1 text-xs text-gray-400 sm:flex-row sm:items-center sm:gap-3">
+              <span>{sub.messageCount} <span className="hidden sm:inline">msg</span></span>
               {tier && (
                 <span className="rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 font-medium">
                   {tierLabels[tier] || `Tier ${tier}`}

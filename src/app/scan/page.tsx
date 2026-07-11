@@ -180,7 +180,7 @@ export default function ScanPage() {
               className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2"
             />
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-medium">
               Port
               <input

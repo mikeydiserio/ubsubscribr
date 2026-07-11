@@ -1,11 +1,25 @@
 import ConnectButton from '@/components/connect-button'
 
 export default function LandingPage() {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Unsubscribr',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Web',
+    description:
+      'Find unwanted mailing lists and unsubscribe safely from one private review screen.',
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center px-4">
-      <main className="flex flex-col items-center text-center max-w-2xl mx-auto py-24 gap-10">
+    <div className="flex flex-1 flex-col items-center justify-center px-4 sm:px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <main className="mx-auto flex max-w-2xl flex-col items-center gap-8 py-14 text-center sm:gap-10 sm:py-24">
         <div className="space-y-4">
-          <h1 className="text-5xl font-bold tracking-tight text-balance">
+          <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
             Unsubscribr
           </h1>
           <p className="text-xl text-neutral-500 dark:text-neutral-400 max-w-lg text-pretty">
@@ -22,11 +36,11 @@ export default function LandingPage() {
           <ConnectButton />
         </div>
 
-        <div className="w-full max-w-xl mx-auto text-left space-y-6 mt-12 pt-12 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="mx-auto mt-8 w-full max-w-xl space-y-6 border-t border-neutral-200 pt-10 text-left dark:border-neutral-800 sm:mt-12 sm:pt-12">
           <h2 className="text-2xl font-bold text-center">How it works</h2>
 
           <div className="space-y-8">
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
               <span className="flex-shrink-0 size-8 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center text-sm font-bold mt-0.5">1</span>
               <div>
                 <h3 className="font-semibold text-base">Link your email account</h3>
@@ -36,7 +50,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
               <span className="flex-shrink-0 size-8 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center text-sm font-bold mt-0.5">2</span>
               <div>
                 <h3 className="font-semibold text-base">We find who&apos;s sending you mail</h3>
@@ -46,7 +60,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
               <span className="flex-shrink-0 size-8 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center text-sm font-bold mt-0.5">3</span>
               <div>
                 <h3 className="font-semibold text-base">Pick what to stop and we handle it</h3>

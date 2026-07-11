@@ -65,7 +65,7 @@ export default function ConnectButton() {
             key={provider}
             onClick={() => connect(provider)}
             disabled={loading !== null || cfg.disabled}
-            className={`inline-flex items-center gap-3 rounded-xl border px-6 py-3 text-base font-medium shadow-sm transition-all w-full ${
+            className={`inline-flex min-h-12 w-full items-center gap-3 rounded-xl border px-5 py-3 text-base font-medium shadow-sm transition-all sm:px-6 ${
               cfg.disabled
                 ? 'bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
                 : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -100,7 +100,7 @@ export default function ConnectButton() {
 
       <button
         onClick={() => router.push('/login')}
-        className="inline-flex items-center justify-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 px-6 py-3 text-base font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all w-full"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-neutral-200 px-5 py-3 text-base font-medium text-neutral-600 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 sm:px-6"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />

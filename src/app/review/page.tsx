@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SubscriptionList from '@/components/subscription-list'
+import DonateLink from '@/components/donate-link'
 import type { SubscriptionGroup } from '@/types'
 
 interface ProgressState {
@@ -194,7 +195,7 @@ export default function ReviewPage() {
               : `Unsubscribe from ${selected.size} sender${selected.size !== 1 ? 's' : ''}`}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="flex flex-col items-center gap-2 pt-2">
             <button
               onClick={revokeAndLogout}
               disabled={revoking}
@@ -202,6 +203,7 @@ export default function ReviewPage() {
             >
               {revoking ? 'Revoking…' : 'Revoke Access & Log Out'}
             </button>
+            <DonateLink label="Found this useful? Buy me a coffee" />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import DonateLink from '@/components/donate-link'
 
 export default function AuthHeader() {
   const [email, setEmail] = useState<string | null>(null)
@@ -39,25 +40,28 @@ export default function AuthHeader() {
   }
 
   return (
-    <header className="w-full border-b border-neutral-200 dark:border-neutral-800">
+    <header className="sticky top-0 z-20 w-full border-b border-neutral-200 bg-background dark:border-neutral-800">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <Link href="/" className="text-sm font-bold tracking-tight">
           Unsubscribr
         </Link>
-        {email && (
-          <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-neutral-400 sm:inline">
-              {email}
-            </span>
-            <button
-              onClick={signOut}
-              disabled={signingOut}
-              className="rounded-lg border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 transition-colors"
-            >
-              {signingOut ? 'Signing out…' : 'Sign out'}
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <DonateLink />
+          {email && (
+            <>
+              <span className="hidden text-xs text-neutral-400 sm:inline">
+                {email}
+              </span>
+              <button
+                onClick={signOut}
+                disabled={signingOut}
+                className="min-h-11 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                {signingOut ? 'Signing out…' : 'Sign out'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   )
