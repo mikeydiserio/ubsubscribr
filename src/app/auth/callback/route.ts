@@ -34,7 +34,7 @@ async function exchangeGoogle(code: string): Promise<ProviderTokens> {
     idToken: tokens.id_token,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || '',
-    scopes: 'gmail.metadata',
+    scopes: 'gmail.readonly',
     // expiry_date is already an absolute epoch-ms timestamp
     expiresAt: tokens.expiry_date
       ? new Date(tokens.expiry_date)
@@ -61,19 +61,14 @@ async function exchangeMicrosoft(code: string): Promise<ProviderTokens> {
     throw new Error('Missing tokens in Microsoft response')
   }
 
-  // msal-node does not expose the refresh token on the result; it lives in
-  // the serialized token cache.
-  const cache = JSON.parse(msal.getTokenCache().serialize()) as {
-    RefreshToken?: Record<string, { secret?: string }>
-  }
-  const refreshEntry = Object.values(cache.RefreshToken ?? {})[0]
-
   return {
     provider: 'microsoft',
     supabaseProvider: 'azure',
     idToken: result.idToken,
     accessToken: result.accessToken,
-    refreshToken: refreshEntry?.secret || '',
+    // MSAL deliberately keeps refresh tokens internal. Persist its encrypted
+    // serialized cache and let acquireTokenSilent handle rotation later.
+    refreshToken: msal.getTokenCache().serialize(),
     scopes: 'Mail.Read',
     expiresAt: result.expiresOn ?? new Date(Date.now() + 3600_000),
   }

@@ -109,7 +109,8 @@ export default function ConnectButton() {
       </button>
 
       <p className="text-xs text-gray-400 text-center">
-        OAuth only — we never see your password. We read message headers, never message contents.
+        OAuth for Google and Microsoft. Other providers use a session-only app
+        password that is never stored. We read message headers, never contents.
       </p>
     </div>
   )

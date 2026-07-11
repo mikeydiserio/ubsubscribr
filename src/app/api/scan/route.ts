@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/route-handler'
 import { GoogleMailboxAdapter } from '@/lib/providers/google-adapter'
+import { MicrosoftMailboxAdapter } from '@/lib/providers/microsoft-adapter'
+import { ImapMailboxAdapter, type ImapConnection } from '@/lib/providers/imap-adapter'
+import type { MailboxProvider } from '@/lib/providers/mailbox-provider'
 import { SubscriptionScanner } from '@/lib/scan/scanner'
 import { decryptToken, encryptToken } from '@/lib/crypto'
 import type { SubscriptionGroup } from '@/types'
@@ -36,6 +39,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  const body = await request.json().catch(() => ({}))
+  const imap = parseImapConnection(body.imap)
+
   const { data: tokenData } = await supabase
     .from('oauth_tokens')
     .select('*')
@@ -44,41 +50,53 @@ export async function POST(request: NextRequest) {
     .limit(1)
     .maybeSingle()
 
-  if (!tokenData) {
+  if (!tokenData && !imap) {
     return NextResponse.json(
-      { error: 'No OAuth tokens found. Reconnect your inbox.' },
+      {
+        error: 'Connect your mailbox to scan it.',
+        code: 'MAILBOX_CREDENTIALS_REQUIRED',
+        email: user.email || '',
+      },
       { status: 400 }
     )
   }
 
-  if (tokenData.provider !== 'google') {
+  if (
+    tokenData?.provider === 'google' &&
+    !tokenData.scopes?.split(/\s+/).includes('gmail.readonly')
+  ) {
     return NextResponse.json(
-      { error: `${tokenData.provider} inboxes are not supported yet. Reconnect with Google.` },
-      { status: 400 }
+      {
+        error: 'Google permission update required. Reconnect your inbox to continue.',
+        code: 'GOOGLE_RECONNECT_REQUIRED',
+      },
+      { status: 409, headers: supabaseResponse.headers }
     )
   }
 
-  let accessToken: string
-  let refreshToken: string
-  try {
-    accessToken = decryptToken(tokenData.encrypted_access_token)
-    refreshToken = tokenData.encrypted_refresh_token
-      ? decryptToken(tokenData.encrypted_refresh_token)
-      : ''
-  } catch {
-    return NextResponse.json(
-      { error: 'Stored credentials are unreadable. Reconnect your inbox.' },
-      { status: 400 }
-    )
-  }
+  let adapter: MailboxProvider
+  if (imap) {
+    adapter = new ImapMailboxAdapter(imap)
+  } else {
+    let accessToken: string
+    let refreshToken: string
+    try {
+      accessToken = decryptToken(tokenData!.encrypted_access_token)
+      refreshToken = tokenData!.encrypted_refresh_token
+        ? decryptToken(tokenData!.encrypted_refresh_token)
+        : ''
+    } catch {
+      return NextResponse.json(
+        { error: 'Stored credentials are unreadable. Reconnect your inbox.' },
+        { status: 400 }
+      )
+    }
 
-  const adapter = new GoogleMailboxAdapter(
-    {
-      accessToken,
-      refreshToken,
-      expiryDate: new Date(tokenData.expires_at).getTime(),
-    },
-    async (refreshed) => {
+    const persistRefreshed = async (refreshed: {
+      accessToken: string
+      refreshToken?: string
+      expiryDate: number
+    }) => {
       await supabase
         .from('oauth_tokens')
         .update({
@@ -89,11 +107,35 @@ export async function POST(request: NextRequest) {
           expires_at: new Date(refreshed.expiryDate).toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', tokenData.id)
+        .eq('id', tokenData!.id)
     }
-  )
 
-  const body = await request.json().catch(() => ({}))
+    if (tokenData!.provider === 'google') {
+      adapter = new GoogleMailboxAdapter(
+        {
+          accessToken,
+          refreshToken,
+          expiryDate: new Date(tokenData!.expires_at).getTime(),
+        },
+        persistRefreshed
+      )
+    } else if (tokenData!.provider === 'microsoft') {
+      adapter = new MicrosoftMailboxAdapter(
+        {
+          accessToken,
+          refreshToken,
+          expiryDate: new Date(tokenData!.expires_at).getTime(),
+        },
+        persistRefreshed
+      )
+    } else {
+      return NextResponse.json(
+        { error: `Unsupported mailbox provider: ${tokenData!.provider}` },
+        { status: 400 }
+      )
+    }
+  }
+
   const requested = Number(body.rangeMonths)
   const rangeMonths =
     Number.isInteger(requested) && requested >= 1 && requested <= MAX_RANGE_MONTHS
@@ -119,6 +161,14 @@ export async function POST(request: NextRequest) {
     }))
 
     let subscriptions: SubscriptionGroup[] = []
+
+    // Remove rows created by the earlier unsafe classifier. Rows without an
+    // unsubscribe method must never remain actionable or selectable.
+    await supabase
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .is('detected_tier', null)
 
     if (subscriptionRows.length > 0) {
       // .select() returns the persisted rows so the client gets real DB ids —
@@ -171,4 +221,21 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: supabaseResponse.headers }
     )
   }
+}
+
+function parseImapConnection(value: unknown): ImapConnection | null {
+  if (!value || typeof value !== 'object') return null
+  const input = value as Record<string, unknown>
+  const host = typeof input.host === 'string' ? input.host.trim() : ''
+  const username = typeof input.username === 'string' ? input.username.trim() : ''
+  const password = typeof input.password === 'string' ? input.password : ''
+  const port = Number(input.port)
+  if (
+    !host || host.length > 253 || !/^[a-z0-9.-]+$/i.test(host) ||
+    !username || username.length > 320 || !password || password.length > 1024 ||
+    !Number.isInteger(port) || port < 1 || port > 65535
+  ) {
+    return null
+  }
+  return { host, username, password, port, secure: input.secure !== false }
 }

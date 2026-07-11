@@ -6,7 +6,8 @@ import { isIP } from 'node:net'
 // address, or a crafted List-Unsubscribe header turns this server into an
 // SSRF proxy against localhost / cloud metadata / the internal network.
 
-const FETCH_TIMEOUT_MS = 10_000
+const FETCH_TIMEOUT_MS = 20_000
+const DNS_TIMEOUT_MS = 5_000
 const MAX_REDIRECTS = 4
 
 function isPrivateIPv4(ip: string): boolean {
@@ -31,7 +32,7 @@ function isPrivateIPv6(ip: string): boolean {
   return false
 }
 
-function isPrivateIp(ip: string): boolean {
+export function isPrivateIp(ip: string): boolean {
   return isIP(ip) === 4 ? isPrivateIPv4(ip) : isPrivateIPv6(ip)
 }
 
@@ -54,7 +55,12 @@ async function assertPublicUrl(raw: string, httpsOnly: boolean): Promise<URL> {
   if (isIP(host)) {
     if (isPrivateIp(host)) throw new Error('Blocked private address')
   } else {
-    const addresses = await lookup(host, { all: true }).catch(() => [])
+    const addresses = await Promise.race([
+      lookup(host, { all: true }).catch(() => []),
+      new Promise<never[]>((resolve) =>
+        setTimeout(() => resolve([]), DNS_TIMEOUT_MS)
+      ),
+    ])
     if (addresses.length === 0) throw new Error(`Cannot resolve host: ${host}`)
     if (addresses.some((a) => isPrivateIp(a.address))) {
       throw new Error('Host resolves to a private address')
@@ -73,12 +79,15 @@ export async function fetchPublic(
 ): Promise<Response> {
   const { httpsOnly = false, ...rest } = init
   let url = await assertPublicUrl(raw, httpsOnly)
+  // One deadline covers the entire redirect chain instead of restarting for
+  // every hop, so one sender cannot hold a batch open for minutes.
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS)
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const response = await fetch(url, {
       ...rest,
       redirect: 'manual',
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal,
     })
 
     if (response.status < 300 || response.status >= 400) {

@@ -14,6 +14,7 @@ export default function ResultsPage() {
   const [results, setResults] = useState<NamedResult[]>([])
   const [loaded, setLoaded] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [revoking, setRevoking] = useState(false)
 
   useEffect(() => {
     const storedResults = sessionStorage.getItem('results')
@@ -51,6 +52,17 @@ export default function ResultsPage() {
     router.push('/')
   }
 
+  const handleRevoke = async () => {
+    setRevoking(true)
+    try {
+      await fetch('/api/auth/revoke', { method: 'POST' })
+    } catch {
+      // Best-effort revoke
+    }
+    sessionStorage.clear()
+    router.push('/')
+  }
+
   if (!loaded) {
     return null
   }
@@ -62,16 +74,25 @@ export default function ResultsPage() {
 
         <div className="text-center space-y-4 pt-8 border-t border-neutral-200 dark:border-neutral-800">
           <p className="text-sm text-gray-500">
-            Your scan results are stored temporarily. You can disconnect your
-            inbox at any time.
+            When you&apos;re done, revoke access so this app can no longer see your
+            inbox. Your scan results are saved to your account.
           </p>
-          <button
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            className="text-sm text-gray-400 hover:text-red-500 underline underline-offset-2 disabled:opacity-50 transition-colors"
-          >
-            {disconnecting ? 'Disconnecting…' : 'Disconnect & Clear Data'}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={handleRevoke}
+              disabled={revoking}
+              className="rounded-lg bg-neutral-900 dark:bg-white px-5 py-2.5 text-sm font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 transition-colors"
+            >
+              {revoking ? 'Revoking…' : 'Revoke Access & Log Out'}
+            </button>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="text-sm text-gray-400 hover:text-red-500 underline underline-offset-2 disabled:opacity-50 transition-colors"
+            >
+              {disconnecting ? 'Disconnecting…' : 'Delete Everything'}
+            </button>
+          </div>
         </div>
       </div>
     </main>

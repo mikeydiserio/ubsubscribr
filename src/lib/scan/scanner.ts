@@ -28,6 +28,12 @@ export class SubscriptionScanner {
       for await (const batch of this.provider.listMessages(startDate, endDate)) {
         for (const message of batch) {
           totalMessages++
+
+          // Safety boundary: ordinary correspondence is never an unsubscribe
+          // candidate. List-ID alone is not enough (family/discussion lists
+          // use it too); require a parseable mechanism supplied by the sender.
+          if (!detectMethod(message)) continue
+
           const key = message.listId
             ? `list:${message.listId}`
             : `from:${message.fromAddress}`
@@ -51,6 +57,7 @@ export class SubscriptionScanner {
 
       const newest = messages[0]
       const method = detectMethod(newest)
+      if (!method) continue
 
       subscriptions.push({
         id: crypto.randomUUID(),

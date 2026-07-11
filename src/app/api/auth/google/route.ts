@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { attachStateCookie, createOAuthState } from '@/lib/oauth-state'
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.metadata',
+  'https://www.googleapis.com/auth/gmail.readonly',
   'openid',
   'email',
   'profile',
