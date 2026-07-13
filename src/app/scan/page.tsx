@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ScanProgress from '@/components/scan-progress'
+import { takeImapCredentials } from '@/lib/imap-session'
 import type { SubscriptionGroup } from '@/types'
 
-type ScanState = 'idle' | 'connecting' | 'scanning' | 'done' | 'error'
+type ScanState = 'connecting' | 'scanning' | 'done' | 'error'
 
 interface ImapForm {
   host: string
@@ -17,24 +18,28 @@ interface ImapForm {
 
 export default function ScanPage() {
   const router = useRouter()
-  const [state, setState] = useState<ScanState>('idle')
-  const [progress, setProgress] = useState(0)
+  // The page always begins scanning immediately, so mount straight into the
+  // scanning state — the effect below only performs the async work.
+  const [state, setState] = useState<ScanState>('scanning')
+  const [progress, setProgress] = useState(10)
   const [subscriptions, setSubscriptions] = useState<SubscriptionGroup[]>([])
   const [totalMessages, setTotalMessages] = useState(0)
   const [error, setError] = useState('')
   const [reconnectGoogle, setReconnectGoogle] = useState(false)
-  const [imap, setImap] = useState<ImapForm>({
-    host: '',
-    port: '993',
-    secure: true,
-    username: '',
-    password: '',
-  })
+  // Credentials handed over from /connect seed the form directly; the store
+  // is cleared on take, so a reload falls back to the manual form.
+  const [imap, setImap] = useState<ImapForm>(
+    () =>
+      takeImapCredentials() ?? {
+        host: '',
+        port: '993',
+        secure: true,
+        username: '',
+        password: '',
+      }
+  )
 
-  const startScan = useCallback(async (imapConnection?: ImapForm) => {
-    setState('scanning')
-    setProgress(10)
-
+  const runScan = useCallback(async (imapConnection?: ImapForm) => {
     const progressInterval = setInterval(() => {
       setProgress((p) => Math.min(p + 5, 85))
     }, 1000)
@@ -72,6 +77,13 @@ export default function ScanPage() {
         if (data.code === 'GOOGLE_RECONNECT_REQUIRED') {
           setReconnectGoogle(true)
         }
+        if (data.code === 'IMAP_SCAN_FAILED') {
+          setImap((current) => ({ ...current, password: '' }))
+          setError(data.detail || data.error || 'Mailbox connection failed')
+          setState('connecting')
+          setProgress(0)
+          return
+        }
         throw new Error(data.detail || data.error || 'Scan failed')
       }
 
@@ -87,13 +99,24 @@ export default function ScanPage() {
     }
   }, [])
 
+  // Synchronous state reset + async scan, for retry/submit event handlers.
+  const startScan = useCallback(
+    (imapConnection?: ImapForm) => {
+      setState('scanning')
+      setProgress(10)
+      runScan(imapConnection)
+    },
+    [runScan]
+  )
+
   const scanStarted = useRef(false)
   useEffect(() => {
     // Guard against StrictMode double-invoke kicking off two inbox scans
     if (scanStarted.current) return
     scanStarted.current = true
-    startScan()
-  }, [startScan])
+    // A non-empty password can only come from the /connect handoff.
+    runScan(imap.password ? imap : undefined)
+  }, [imap, runScan])
 
   const handleReview = useCallback(() => {
     sessionStorage.setItem('subscriptions', JSON.stringify(subscriptions))
@@ -148,6 +171,12 @@ export default function ScanPage() {
               These credentials are used for this scan only and are never stored.
             </p>
           </div>
+
+          {error && (
+            <p role="alert" className="text-sm text-red-500">
+              {error}
+            </p>
+          )}
 
           <label className="block text-sm font-medium">
             Email / username

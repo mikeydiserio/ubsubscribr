@@ -18,7 +18,7 @@ export default function DonateLink({
       href={DONATE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-pink-500 dark:hover:text-pink-400 transition-colors ${className}`}
+      className={`inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-accent transition-colors ${className}`}
     >
       <svg
         aria-hidden="true"

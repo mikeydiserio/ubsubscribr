@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Geist_Mono } from "next/font/google"
 import AuthHeader from "@/components/auth-header"
 import Link from "next/link"
 import "./globals.css"
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 })
 
@@ -63,22 +63,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         <AuthHeader />
         {children}
-        <footer className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
+        <footer className="mt-auto border-t border-white/5">
           <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-3 px-4 py-6 text-center text-xs text-neutral-500 sm:flex-row sm:text-left">
-            <p>© {new Date().getFullYear()} Unsubscribr</p>
-            <nav aria-label="Legal" className="flex min-h-11 items-center gap-5">
-              <Link className="underline-offset-4 hover:underline" href="/privacy">
-                Privacy
-              </Link>
-              <Link className="underline-offset-4 hover:underline" href="/terms">
-                Terms
-              </Link>
-            </nav>
+            <p>© {new Date().getFullYear()} Mikey Diserio</p>
+            
           </div>
         </footer>
       </body>

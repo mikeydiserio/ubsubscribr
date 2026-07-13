@@ -50,7 +50,13 @@ export class ImapMailboxAdapter implements MailboxProvider {
       host: connection.host,
       port: connection.port,
       secure: connection.secure,
+      // Port 143 is only acceptable when the server completes STARTTLS. Never
+      // send mailbox credentials over a connection that stays in plaintext.
+      ...(connection.secure ? {} : { doSTARTTLS: true }),
       auth: { user: connection.username, pass: connection.password },
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 60_000,
       logger: false,
     })
   }
@@ -64,7 +70,14 @@ export class ImapMailboxAdapter implements MailboxProvider {
     if (addresses.some(({ address }) => isPrivateIp(address))) {
       throw new Error('Private or local IMAP servers are not allowed')
     }
-    await this.client.connect()
+    try {
+      await this.client.connect()
+    } catch (error) {
+      // connect() can fail after opening a socket but before the client is
+      // usable. Ensure that socket does not survive the request.
+      this.client.close()
+      throw error
+    }
   }
 
   async *listMessages(
@@ -128,6 +141,15 @@ export class ImapMailboxAdapter implements MailboxProvider {
   }
 
   async disconnect(): Promise<void> {
-    if (this.client.usable) await this.client.logout()
+    if (!this.client.usable) {
+      this.client.close()
+      return
+    }
+
+    try {
+      await this.client.logout()
+    } catch {
+      this.client.close()
+    }
   }
 }

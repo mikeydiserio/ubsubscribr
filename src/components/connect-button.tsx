@@ -65,15 +65,15 @@ export default function ConnectButton() {
             key={provider}
             onClick={() => connect(provider)}
             disabled={loading !== null || cfg.disabled}
-            className={`inline-flex min-h-12 w-full items-center gap-3 rounded-xl border px-5 py-3 text-base font-medium shadow-sm transition-all sm:px-6 ${
+            className={`inline-flex min-h-12 w-full items-center gap-3 rounded-xl border px-5 py-3 text-base font-medium transition-all sm:px-6 ${
               cfg.disabled
-                ? 'bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
-                : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-neutral-600 opacity-60'
+                : 'border-white/10 bg-white/[0.03] text-neutral-100 hover:border-accent/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50'
             }`}
           >
             {loading === provider ? (
               <span className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                <span className="inline-block size-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                 Connecting…
               </span>
             ) : (
@@ -81,7 +81,7 @@ export default function ConnectButton() {
                 {cfg.icon}
                 <div className="text-left">
                   <div>{cfg.label}</div>
-                  <div className="text-xs font-normal text-gray-400">{cfg.description}</div>
+                  <div className="text-xs font-normal text-neutral-500">{cfg.description}</div>
                 </div>
               </>
             )}
@@ -89,28 +89,34 @@ export default function ConnectButton() {
         )
       })}
 
-      <div className="relative w-full my-2">
+      <div className="relative w-full my-3">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-neutral-200 dark:border-neutral-700" />
+          <div className="w-full border-t border-white/10" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-background px-3 text-xs text-gray-400">or sign in with email</span>
+          <span className="bg-background px-3 text-xs text-neutral-500">or connect another provider</span>
         </div>
       </div>
 
       <button
-        onClick={() => router.push('/login')}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-neutral-200 px-5 py-3 text-base font-medium text-neutral-600 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 sm:px-6"
+        onClick={() => router.push('/connect')}
+        className="inline-flex min-h-12 w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-base font-medium text-neutral-100 transition-all hover:border-accent/30 hover:bg-white/[0.06] sm:px-6"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
         </svg>
-        Sign in with Email
+        <div className="text-left">
+          <div>Other email provider</div>
+          <div className="text-xs font-normal text-neutral-500">
+            Telstra, Yahoo, iCloud &amp; any IMAP mailbox
+          </div>
+        </div>
       </button>
 
-      <p className="text-xs text-gray-400 text-center">
-        OAuth for Google and Microsoft. Other providers use a session-only app
-        password that is never stored. We read message headers, never contents.
+      <p className="mt-2 text-xs text-neutral-500 text-center leading-relaxed">
+        OAuth for Google and Microsoft. Other providers sign in with a
+        session-only password that is never stored. We read message headers,
+        never contents.
       </p>
     </div>
   )

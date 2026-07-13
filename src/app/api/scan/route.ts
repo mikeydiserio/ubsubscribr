@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/route-handler'
 import { GoogleMailboxAdapter } from '@/lib/providers/google-adapter'
 import { MicrosoftMailboxAdapter } from '@/lib/providers/microsoft-adapter'
-import { ImapMailboxAdapter, type ImapConnection } from '@/lib/providers/imap-adapter'
+import { ImapMailboxAdapter } from '@/lib/providers/imap-adapter'
+import { parseImapConnection } from '@/lib/providers/imap-validation'
 import type { MailboxProvider } from '@/lib/providers/mailbox-provider'
 import { SubscriptionScanner } from '@/lib/scan/scanner'
 import { decryptToken, encryptToken } from '@/lib/crypto'
@@ -216,26 +217,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Scan failed',
-        detail: error instanceof Error ? error.message : 'Unknown error',
+        code: imap ? 'IMAP_SCAN_FAILED' : 'OAUTH_SCAN_FAILED',
+        detail: imap
+          ? 'The mailbox connection failed. Check the server settings and app password, then try again.'
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error',
       },
       { status: 500, headers: supabaseResponse.headers }
     )
   }
-}
-
-function parseImapConnection(value: unknown): ImapConnection | null {
-  if (!value || typeof value !== 'object') return null
-  const input = value as Record<string, unknown>
-  const host = typeof input.host === 'string' ? input.host.trim() : ''
-  const username = typeof input.username === 'string' ? input.username.trim() : ''
-  const password = typeof input.password === 'string' ? input.password : ''
-  const port = Number(input.port)
-  if (
-    !host || host.length > 253 || !/^[a-z0-9.-]+$/i.test(host) ||
-    !username || username.length > 320 || !password || password.length > 1024 ||
-    !Number.isInteger(port) || port < 1 || port > 65535
-  ) {
-    return null
-  }
-  return { host, username, password, port, secure: input.secure !== false }
 }

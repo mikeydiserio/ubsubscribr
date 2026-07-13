@@ -1,0 +1,186 @@
+:root {
+    --dur: 8s;            /* one full infall cycle — the loop period */
+    --hole: 120px;        /* event horizon diameter */
+    --glow: #ff9a3c;      /* accretion disk hot amber */
+    --glow-2: #ff5e2b;    /* inner heat */
+    --wisp: #7b6cff;      /* cool outer wisp violet */
+    --bg: #05060f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+
+  .scene {
+    position: relative;
+    width: 720px;
+    height: 720px;
+    max-width: 100vmin;
+    max-height: 100vmin;
+    display: grid;
+    place-items: center;
+  }
+
+  /* ---------- star field ---------- */
+  .stars, .stars::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 22%, #fff9, transparent 60%),
+      radial-gradient(1px 1px at 78% 14%, #fff7, transparent 60%),
+      radial-gradient(1.5px 1.5px at 88% 62%, #fff8, transparent 60%),
+      radial-gradient(1px 1px at 30% 80%, #fff6, transparent 60%),
+      radial-gradient(2px 2px at 62% 88%, #fff5, transparent 60%),
+      radial-gradient(1px 1px at 45% 8%, #fff7, transparent 60%),
+      radial-gradient(1.5px 1.5px at 8% 58%, #fff6, transparent 60%),
+      radial-gradient(1px 1px at 94% 38%, #fff8, transparent 60%);
+    animation: drift calc(var(--dur) * 8) linear infinite;
+  }
+  .stars::after {
+    transform: rotate(150deg) scale(1.15);
+    opacity: .6;
+    animation-direction: reverse;
+  }
+  @keyframes drift {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ---------- accretion disk ---------- */
+  .disk {
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--wisp) 55%, transparent) 40deg,
+      transparent 90deg,
+      color-mix(in srgb, var(--glow) 70%, transparent) 150deg,
+      color-mix(in srgb, var(--glow-2) 85%, transparent) 200deg,
+      transparent 260deg,
+      color-mix(in srgb, var(--glow) 50%, transparent) 320deg,
+      transparent 360deg
+    );
+    filter: blur(14px);
+    /* hollow the middle so it reads as a ring, not a blob */
+    -webkit-mask: radial-gradient(circle, transparent 0 20%, #000 34%, #000 62%, transparent 72%);
+            mask: radial-gradient(circle, transparent 0 20%, #000 34%, #000 62%, transparent 72%);
+    animation: spin calc(var(--dur) / 2.2) linear infinite;
+  }
+
+  /* faster, tighter inner swirl */
+  .disk.inner {
+    width: 300px;
+    height: 300px;
+    filter: blur(8px);
+    background: conic-gradient(
+      from 90deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--glow-2) 90%, transparent) 60deg,
+      transparent 130deg,
+      color-mix(in srgb, var(--glow) 80%, transparent) 210deg,
+      transparent 290deg,
+      color-mix(in srgb, #ffd9a0 70%, transparent) 330deg,
+      transparent 360deg
+    );
+    -webkit-mask: radial-gradient(circle, transparent 0 24%, #000 38%, #000 60%, transparent 74%);
+            mask: radial-gradient(circle, transparent 0 24%, #000 38%, #000 60%, transparent 74%);
+    animation: spin calc(var(--dur) / 3.8) linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ---------- photon ring + event horizon ---------- */
+  .photon {
+    position: absolute;
+    width: calc(var(--hole) + 26px);
+    height: calc(var(--hole) + 26px);
+    border-radius: 50%;
+    box-shadow:
+      0 0 18px 4px color-mix(in srgb, var(--glow) 80%, transparent),
+      0 0 60px 14px color-mix(in srgb, var(--glow-2) 45%, transparent),
+      inset 0 0 22px 6px color-mix(in srgb, #ffd9a0 70%, transparent);
+    animation: breathe calc(var(--dur) / 2) ease-in-out infinite alternate;
+  }
+  @keyframes breathe {
+    from { transform: scale(1); }
+    to   { transform: scale(1.045); }
+  }
+
+  .horizon {
+    position: absolute;
+    width: var(--hole);
+    height: var(--hole);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #000 0 64%, #05030a 78%, transparent 100%);
+    z-index: 5;
+  }
+
+  /* ---------- infalling emails ---------- */
+  /* .angle sets each email's entry bearing; .orbit spins (accelerating);
+     .mail slides inward along the rotating radius while shrinking. */
+  .angle {
+    position: absolute;
+    width: 0; height: 0;
+    z-index: 4;
+    transform: rotate(var(--a));
+  }
+  .orbit {
+    position: absolute;
+    width: 0; height: 0;
+    animation: whirl var(--dur) infinite;
+    animation-timing-function: cubic-bezier(.55, .02, .85, .45); /* speeds up */
+    animation-delay: var(--d);
+  }
+  @keyframes whirl {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(880deg); }
+  }
+
+  .mail {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    translate: -50% -50%;
+    color: #eef0ff;
+    filter: drop-shadow(0 0 6px rgba(160, 170, 255, .55));
+    animation: infall var(--dur) infinite;
+    animation-timing-function: cubic-bezier(.5, 0, .82, .38); /* accelerating pull */
+    animation-delay: var(--d);
+    opacity: 0;
+  }
+  @keyframes infall {
+    0%   { transform: translateX(var(--r)) scale(1) rotate(0deg); opacity: 0; }
+    7%   { opacity: .95; }
+    70%  { opacity: .95; }
+    92%  { opacity: .55; filter: drop-shadow(0 0 10px rgba(255, 154, 60, .9)); }
+    100% { transform: translateX(8px) scale(.04) rotate(-540deg); opacity: 0; }
+  }
+
+  .mail svg { width: 100%; height: 100%; display: block; }
+
+  /* stagger nine emails evenly across the cycle for a seamless loop */
+  .e1 { --a:   0deg; } .e1 .orbit, .e1 .mail { --d: calc(var(--dur) * -0.000); --r: 330px; }
+  .e2 { --a:  40deg; } .e2 .orbit, .e2 .mail { --d: calc(var(--dur) * -0.111); --r: 300px; }
+  .e3 { --a:  80deg; } .e3 .orbit, .e3 .mail { --d: calc(var(--dur) * -0.222); --r: 345px; }
+  .e4 { --a: 120deg; } .e4 .orbit, .e4 .mail { --d: calc(var(--dur) * -0.333); --r: 285px; }
+  .e5 { --a: 160deg; } .e5 .orbit, .e5 .mail { --d: calc(var(--dur) * -0.444); --r: 320px; }
+  .e6 { --a: 200deg; } .e6 .orbit, .e6 .mail { --d: calc(var(--dur) * -0.556); --r: 350px; }
+  .e7 { --a: 240deg; } .e7 .orbit, .e7 .mail { --d: calc(var(--dur) * -0.667); --r: 295px; }
+  .e8 { --a: 280deg; } .e8 .orbit, .e8 .mail { --d: calc(var(--dur) * -0.778); --r: 335px; }
+  .e9 { --a: 320deg; } .e9 .orbit, .e9 .mail { --d: calc(var(--dur) * -0.889); --r: 310px; }
+
+  /* smaller screens: pull the radii in via scene scaling */
+  @media (max-width: 760px) {
+    .scene { transform: scale(.62); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .disk, .disk.inner, .orbit, .mail, .stars, .stars::after, .photon {
+      animation-duration: calc(var(--dur) * 6);
+    }
+  }
