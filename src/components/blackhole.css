@@ -158,10 +158,11 @@
     7%   { opacity: .95; }
     70%  { opacity: .95; }
     92%  { opacity: .55; filter: drop-shadow(0 0 10px rgba(255, 154, 60, .9)); }
-    100% { transform: translateX(8px) scale(.04) rotate(-540deg); opacity: 0; }
+    100% { transform: translateX(8px) scale(.04) rotate(-1040deg); opacity: 0; }
   }
 
-  .mail svg { width: 100%; height: 100%; display: block; }
+  .mail svg {    
+width: 100%; height: 100%; display: block; }
 
   /* stagger nine emails evenly across the cycle for a seamless loop */
   .e1 { --a:   0deg; } .e1 .orbit, .e1 .mail { --d: calc(var(--dur) * -0.000); --r: 330px; }

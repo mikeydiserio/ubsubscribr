@@ -11,6 +11,9 @@ importers:
       '@azure/msal-node':
         specifier: ^5.3.1
         version: 5.4.0
+      '@paper-design/shaders-react':
+        specifier: ^0.0.77
+        version: 0.0.77(@types/react@19.2.17)(react@19.2.4)
       '@supabase/ssr':
         specifier: ^0.12.0
         version: 0.12.0(@supabase/supabase-js@2.110.2)
@@ -470,6 +473,18 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@paper-design/shaders-react@0.0.77':
+    resolution: {integrity: sha512-VCjhK7k6GT1BMjq7kLsDHMnMy1ryjCTALdhOVIf2Z5b1jh5eEHXqHdQCvMAJ7v6evjiN1twzjM1KUNOg2RoXBw==}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@paper-design/shaders@0.0.77':
+    resolution: {integrity: sha512-y0mR3brBu6qvVgbnvBdXX3zL/hajdamkECLt8NbexaEc1L46W3a+ZIEwxu1NJ2/bqwxAgjJC0o2+4CAii5wp/w==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -2751,6 +2766,15 @@ snapshots:
       fastq: 1.20.1
 
   '@nolyfill/is-core-module@1.0.39': {}
+
+  '@paper-design/shaders-react@0.0.77(@types/react@19.2.17)(react@19.2.4)':
+    dependencies:
+      '@paper-design/shaders': 0.0.77
+      react: 19.2.4
+    optionalDependencies:
+      '@types/react': 19.2.17
+
+  '@paper-design/shaders@0.0.77': {}
 
   '@pinojs/redact@0.4.0': {}
 
