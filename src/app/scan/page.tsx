@@ -127,24 +127,24 @@ export default function ScanPage() {
     return (
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md text-center space-y-4">
-          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+          <h2 className="text-2xl font-bold text-red-400">
             Scan Failed
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <p className="text-neutral-400">{error}</p>
           {reconnectGoogle ? (
             <button
               onClick={async () => {
                 await fetch('/api/auth/disconnect', { method: 'POST' })
                 window.location.href = '/api/auth/google'
               }}
-              className="rounded-lg bg-neutral-900 dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200 transition-colors"
             >
               Reconnect Google
             </button>
           ) : (
             <button
               onClick={() => startScan()}
-              className="rounded-lg bg-neutral-900 dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200 transition-colors"
             >
               Try Again
             </button>
@@ -158,7 +158,7 @@ export default function ScanPage() {
     return (
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <form
-          className="max-w-md w-full space-y-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6"
+          className="max-w-md w-full space-y-5 rounded-2xl border border-white/10 p-6"
           onSubmit={(event) => {
             event.preventDefault()
             startScan(imap)
@@ -166,7 +166,7 @@ export default function ScanPage() {
         >
           <div>
             <h2 className="text-2xl font-bold">Connect your mailbox</h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-neutral-400">
               Use an app-specific password when your mail provider supports one.
               These credentials are used for this scan only and are never stored.
             </p>
@@ -185,7 +185,7 @@ export default function ScanPage() {
               autoComplete="username"
               value={imap.username}
               onChange={(event) => setImap({ ...imap, username: event.target.value })}
-              className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2"
             />
           </label>
           <label className="block text-sm font-medium">
@@ -196,7 +196,7 @@ export default function ScanPage() {
               autoComplete="current-password"
               value={imap.password}
               onChange={(event) => setImap({ ...imap, password: event.target.value })}
-              className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2"
             />
           </label>
           <label className="block text-sm font-medium">
@@ -206,7 +206,7 @@ export default function ScanPage() {
               placeholder="imap.example.com"
               value={imap.host}
               onChange={(event) => setImap({ ...imap, host: event.target.value })}
-              className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2"
             />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -219,7 +219,7 @@ export default function ScanPage() {
                 max="65535"
                 value={imap.port}
                 onChange={(event) => setImap({ ...imap, port: event.target.value })}
-                className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2"
               />
             </label>
             <label className="flex items-end gap-2 pb-2 text-sm font-medium">
@@ -233,7 +233,7 @@ export default function ScanPage() {
           </div>
           <button
             type="submit"
-            className="w-full rounded-xl bg-neutral-900 dark:bg-white px-5 py-3 font-medium text-white dark:text-neutral-900"
+            className="w-full rounded-xl bg-white px-5 py-3 font-medium text-neutral-900 hover:bg-neutral-200 transition-colors"
           >
             Connect and scan
           </button>
@@ -252,23 +252,23 @@ export default function ScanPage() {
         <ScanProgress progress={progress} state={state} />
 
         {state === 'scanning' && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-400">
             Scanning the last 6 months of messages. This takes a few seconds.
           </p>
         )}
 
         {state === 'done' && (
           <div className="space-y-6">
-            <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-6 space-y-2">
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] p-6 space-y-2">
               <p className="text-3xl font-bold">{subscriptions.length}</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-neutral-400">
                 mailing lists found in {totalMessages.toLocaleString()}{' '}
                 messages scanned
               </p>
             </div>
             <button
               onClick={handleReview}
-              className="rounded-xl bg-neutral-900 dark:bg-white px-6 py-3 text-base font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+              className="rounded-xl bg-white px-6 py-3 text-base font-medium text-neutral-900 hover:bg-neutral-200 transition-colors"
             >
               Review Subscriptions
             </button>

@@ -20,7 +20,7 @@ export default function SubscriptionList({
   onToggle,
 }: Props) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {subscriptions.map((sub) => {
         const isSelected = selected.has(sub.id)
         const tier = sub.detectedMethod?.tier
@@ -28,28 +28,28 @@ export default function SubscriptionList({
         return (
           <label
             key={sub.id}
-            className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors ${
+            className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors ${
               isSelected
-                ? 'bg-neutral-100 dark:bg-neutral-900'
-                : 'hover:bg-neutral-50 dark:hover:bg-neutral-900/50'
+                ? 'border-accent/40 bg-accent/10'
+                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'
             }`}
           >
             <input
               type="checkbox"
               checked={isSelected}
               onChange={() => onToggle(sub.id)}
-              className="h-4 w-4 rounded border-gray-300 text-neutral-900 focus:ring-neutral-900"
+              className="size-5 shrink-0 cursor-pointer accent-accent"
             />
 
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{sub.senderName}</p>
-              <p className="text-xs text-gray-500 truncate">{sub.fromAddress}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-neutral-100">{sub.senderName}</p>
+              <p className="truncate text-xs text-neutral-400">{sub.fromAddress}</p>
             </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-1 text-xs text-gray-400 sm:flex-row sm:items-center sm:gap-3">
-              <span>{sub.messageCount} <span className="hidden sm:inline">msg</span></span>
+            <div className="flex shrink-0 flex-col items-end gap-1 text-xs text-neutral-400 sm:flex-row sm:items-center sm:gap-3">
+              <span className="tabular-nums">{sub.messageCount} <span className="hidden sm:inline">msg</span></span>
               {tier && (
-                <span className="rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 font-medium">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 font-medium text-neutral-300">
                   {tierLabels[tier] || `Tier ${tier}`}
                 </span>
               )}

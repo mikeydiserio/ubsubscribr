@@ -40,7 +40,8 @@ export default function AuthHeader() {
   }
 
   return (
-    <header className="relative top-0 z-20 max-w-5xl border-b border-white/5 flex items-center gap-3">
+    <header className="relative top-0 z-20 border-b border-white/5">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="text-sm font-bold tracking-tight text-neutral-500">
           Unsubscri<span className="text-accent">br</span>
         </Link>
@@ -61,6 +62,7 @@ export default function AuthHeader() {
             </>
           )}
         </div>
+      </div>
     </header>
   )
 }

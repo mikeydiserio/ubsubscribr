@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter, Geist_Mono } from "next/font/google"
 import AuthHeader from "@/components/auth-header"
 import Link from "next/link"
@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 })
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

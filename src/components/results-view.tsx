@@ -9,16 +9,15 @@ type Props = {
 const statusConfig = {
   success: {
     label: 'Unsubscribed',
-    class: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20',
+    class: 'text-green-400 bg-green-900/20',
   },
   needs_review: {
     label: 'Needs Review',
-    class:
-      'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+    class: 'text-amber-400 bg-amber-900/20',
   },
   failed: {
     label: 'Failed',
-    class: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    class: 'text-red-400 bg-red-900/20',
   },
 }
 
@@ -47,10 +46,10 @@ export default function ResultsView({ results }: Props) {
     <div className="space-y-8">
       {onlySuccess && (
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-green-600 dark:text-green-400">
+          <h1 className="text-3xl font-bold text-green-400">
             All Clear
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-neutral-400">
             You have been unsubscribed from all {results.length} mailing lists.
           </p>
         </div>
@@ -64,11 +63,11 @@ export default function ResultsView({ results }: Props) {
         (section) =>
           section.items.length > 0 && (
             <div key={section.key} className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
                 {section.title} ({section.items.length})
               </h2>
               {section.key === 'needs_review' && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-4 text-sm text-amber-200">
                   <p className="font-medium">These requests are not confirmed yet.</p>
                   <p className="mt-1">
                     If you see <strong>Send unsubscribe email</strong>, click it

@@ -72,8 +72,8 @@ export default function ResultsPage() {
       <div className="space-y-8">
         <ResultsView results={results} />
 
-        <div className="text-center space-y-4 pt-8 border-t border-neutral-200 dark:border-neutral-800">
-          <p className="text-sm text-gray-500">
+        <div className="text-center space-y-4 pt-8 border-t border-white/10">
+          <p className="text-sm text-neutral-400">
             When you&apos;re done, revoke access so this app can no longer see your
             inbox. Your scan results are saved to your account.
           </p>
@@ -81,14 +81,14 @@ export default function ResultsPage() {
             <button
               onClick={handleRevoke}
               disabled={revoking}
-              className="rounded-lg bg-neutral-900 dark:bg-white px-5 py-2.5 text-sm font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 transition-colors"
+              className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-50 transition-colors"
             >
               {revoking ? 'Revoking…' : 'Revoke Access & Log Out'}
             </button>
             <button
               onClick={handleDisconnect}
               disabled={disconnecting}
-              className="text-sm text-gray-400 hover:text-red-500 underline underline-offset-2 disabled:opacity-50 transition-colors"
+              className="text-sm text-neutral-500 hover:text-red-400 underline underline-offset-2 disabled:opacity-50 transition-colors"
             >
               {disconnecting ? 'Disconnecting…' : 'Delete Everything'}
             </button>

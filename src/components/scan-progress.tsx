@@ -16,7 +16,7 @@ export default function ScanProgress({ progress, state }: ScanProgressProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Inbox scan progress"
-        className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden"
+        className="h-2 bg-white/10 rounded-full overflow-hidden"
       >
         <div
           className={`h-full rounded-full transition-all duration-500 ease-out ${
@@ -24,12 +24,12 @@ export default function ScanProgress({ progress, state }: ScanProgressProps) {
               ? 'bg-green-500'
               : state === 'error'
                 ? 'bg-red-500'
-                : 'bg-neutral-800 dark:bg-neutral-200'
+                : 'bg-neutral-200'
           }`}
           style={{ width: `${progress}%` }}
         />
       </div>
-      <p className="text-xs text-gray-400 tabular-nums">{progress}%</p>
+      <p className="text-xs text-neutral-400 tabular-nums">{progress}%</p>
     </div>
   )
 }

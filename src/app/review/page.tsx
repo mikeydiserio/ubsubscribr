@@ -133,7 +133,7 @@ export default function ReviewPage() {
   if (subscriptions.length === 0) {
     return (
       <main className="flex-1 flex items-center justify-center px-4">
-        <p className="text-gray-500">No subscriptions found.</p>
+        <p className="text-neutral-400">No subscriptions found.</p>
       </main>
     )
   }
@@ -141,10 +141,10 @@ export default function ReviewPage() {
   return (
     <main className="flex-1 px-4 py-8 max-w-3xl mx-auto w-full">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">Your Subscriptions</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-neutral-400 mt-1">
               {subscriptions.length} mailing lists found. Select only the
               senders you want to leave.
             </p>
@@ -152,7 +152,7 @@ export default function ReviewPage() {
           <button
             onClick={toggleAll}
             disabled={running}
-            className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 underline underline-offset-2"
+            className="shrink-0 whitespace-nowrap py-1 text-sm text-neutral-400 hover:text-neutral-100 underline underline-offset-2 transition-colors"
           >
             {selected.size === subscriptions.length ? 'Deselect All' : 'Select All'}
           </button>
@@ -164,7 +164,7 @@ export default function ReviewPage() {
           onToggle={toggleOne}
         />
 
-        <div className="sticky bottom-0 bg-white dark:bg-black py-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="sticky bottom-0 border-t border-white/10 bg-background pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {running && progress && (
             <div className="mb-3 space-y-2" role="status" aria-live="polite">
               <div className="flex justify-between gap-4 text-sm">
@@ -181,14 +181,14 @@ export default function ReviewPage() {
             </div>
           )}
           {actionError && (
-            <p className="mb-3 text-sm text-red-600 dark:text-red-400" role="alert">
+            <p className="mb-3 text-sm text-red-400" role="alert">
               {actionError}
             </p>
           )}
           <button
             onClick={runUnsubscribe}
             disabled={running || selected.size === 0}
-            className="w-full rounded-xl bg-neutral-900 dark:bg-white px-6 py-3 text-base font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl bg-white px-6 py-3 text-base font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {running
               ? `Unsubscribing ${progress?.completed || 0} of ${progress?.total || selected.size}…`
@@ -199,7 +199,7 @@ export default function ReviewPage() {
             <button
               onClick={revokeAndLogout}
               disabled={revoking}
-              className="text-sm text-gray-400 hover:text-red-500 underline underline-offset-2 disabled:opacity-50 transition-colors"
+              className="text-sm text-neutral-500 hover:text-red-400 underline underline-offset-2 disabled:opacity-50 transition-colors"
             >
               {revoking ? 'Revoking…' : 'Revoke Access & Log Out'}
             </button>

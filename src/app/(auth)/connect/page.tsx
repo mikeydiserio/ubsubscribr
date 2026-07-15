@@ -7,9 +7,9 @@ import { findPreset, getOauthNudge } from '@/lib/providers/imap-presets'
 import { setImapCredentials } from '@/lib/imap-session'
 
 const inputClasses =
-  'w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-transparent px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400'
+  'w-full rounded-xl border border-white/10 bg-transparent px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400'
 const submitClasses =
-  'w-full rounded-xl bg-neutral-900 dark:bg-white px-6 py-3 text-sm font-medium text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 transition-colors'
+  'w-full rounded-xl bg-white px-6 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-50 transition-colors'
 
 const OAUTH_LABELS = {
   google: { provider: 'Gmail', button: 'Google' },
@@ -131,7 +131,7 @@ export default function ConnectPage() {
           )}
 
           {oauthNudge && (
-            <p id="email-hint" className="text-xs text-amber-600 dark:text-amber-400">
+            <p id="email-hint" className="text-xs text-amber-400">
               For {OAUTH_LABELS[oauthNudge].provider} use the{' '}
               {OAUTH_LABELS[oauthNudge].button} button on the{' '}
               <Link href="/" className="underline underline-offset-2">
@@ -169,14 +169,14 @@ export default function ConnectPage() {
                 }
                 setAdvancedOpen(true)
               }}
-              className="text-xs text-neutral-400 hover:text-neutral-600 underline underline-offset-2"
+              className="text-xs text-neutral-400 hover:text-neutral-200 underline underline-offset-2"
             >
               Advanced: set server manually
             </button>
           )}
 
           {showAdvanced && (
-            <div className="space-y-4 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <div className="space-y-4 rounded-xl border border-white/10 p-4">
               <div className="space-y-2">
                 <label htmlFor="host" className="text-sm font-medium">
                   IMAP server
@@ -235,7 +235,7 @@ export default function ConnectPage() {
         </form>
 
         <p className="text-center">
-          <Link href="/" className="text-xs text-neutral-400 hover:text-neutral-600 underline underline-offset-2">
+          <Link href="/" className="text-xs text-neutral-400 hover:text-neutral-200 underline underline-offset-2">
             ← Back to all sign-in options
           </Link>
         </p>
